@@ -12,7 +12,7 @@ namespace CarRentalSystem
 {
     public partial class CarsFr : Form
     {
-        string connectionString = "Data Source=HOCPAM;Initial Catalog=CarRentaDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;";
+        string connectionString = "Data Source=HocPham\\SQLEXPRESS;Initial Catalog=CarRentaDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;";
         private SqlDataAdapter adapter;
         private SqlCommandBuilder commandBuilder;
         private MainFr mainFr;

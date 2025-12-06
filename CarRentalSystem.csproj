@@ -78,6 +78,7 @@
     <Compile Include="DashBoardFr.Designer.cs">
       <DependentUpon>DashBoardFr.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helper\DbExecutor.cs" />
     <Compile Include="LoginFr.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -169,6 +170,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitignore" />
     <Content Include="CarImages\AUDI_2cho.png" />
     <Content Include="CarImages\AUDI_4cho.png" />
     <Content Include="CarImages\AUDI_7cho.png" />
