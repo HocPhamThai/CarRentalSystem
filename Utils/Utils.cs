@@ -11,6 +11,11 @@ namespace CarRentalSystem.Utils
 {
     public static class Utils
     {
+        public enum Role
+        {
+            Admin = 0,
+            Employee = 1
+        }
 
         public static bool IsCarAvailableForBooking(string connectionString, DateTime fromDate, DateTime toDate, string carId)
         {
@@ -33,6 +38,27 @@ namespace CarRentalSystem.Utils
 
                     int count = (int)command.ExecuteScalar();
 
+                    connection.Close();
+                    return count > 0;
+                }
+            }
+        }
+
+        public static bool IsCarAvailableForBooking(int carId)
+        {
+            string connectionString = CarRentalSystem.Helper.AppConfigHelper.ConnectionString;
+            using (SqlConnection connection = new SqlConnection(@connectionString))
+            {
+                connection.Open();
+                string query = "SELECT COUNT(*) FROM Cars WHERE available = 'YES' " +
+                                "AND @carId NOT IN (SELECT C.carId FROM Cars C " +
+                                "INNER JOIN Bookings B ON C.carId = B.carId " +
+                                "WHERE (B.fromDate <= GETDATE() AND B.toDate >= GETDATE())" +
+                                "AND B.status = 'In Rental')";
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@carId", carId);
+                    int count = (int)command.ExecuteScalar();
                     connection.Close();
                     return count > 0;
                 }
