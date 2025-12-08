@@ -265,7 +265,7 @@
             this.lbExit.Size = new System.Drawing.Size(36, 41);
             this.lbExit.TabIndex = 14;
             this.lbExit.Text = "X";
-            this.lbExit.Click += new System.EventHandler(this.lbExit_Click_1);
+            this.lbExit.Click += new System.EventHandler(this.lbExit_Click);
             // 
             // label1
             // 

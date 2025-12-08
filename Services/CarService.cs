@@ -30,50 +30,57 @@ namespace CarRentalSystem.Services
             return _repo.Search(column, text);
         }
 
-        public string AddCar(CarDTO car)
+        public void AddCar(CarDTO car)
         {
-            // --- Validation business ---
-            if (string.IsNullOrWhiteSpace(car.Brand) ||
-                string.IsNullOrWhiteSpace(car.Model) ||
-                string.IsNullOrWhiteSpace(car.Category) ||
-                string.IsNullOrWhiteSpace(car.Available))
-            {
-                return "Missing required information.";
-            }
+            Validate(car);
 
             if (car.Price <= 0)
-                return "Price must be greater than zero.";
+                throw new Exception("Price must be greater than zero.");
 
             int affected = _repo.Add(car);
-            return affected > 0 ? "Car added successfully" : "Failed to add car";
+            if (affected <= 0)
+                throw new Exception("Failed to add car.");
         }
 
-        public string UpdateCar(CarDTO car)
+        public void UpdateCar(CarDTO car)
         {
             if (car.CarId <= 0)
-                return "Car ID is invalid.";
+                throw new Exception("Car ID is invalid.");
 
-            if (car.Price <= 0)
-                return "Price must be greater than zero.";
+            Validate(car);
 
             int affected = _repo.Update(car);
-            return affected > 0 ? "Car updated successfully" : "Update failed";
+            if (affected <= 0)
+                throw new Exception("Failed to update car.");
         }
 
-        public string DeleteCar(int carId)
+        public void DeleteCar(int carId)
         {
             if (carId <= 0)
-                return "Invalid Car ID";
+                throw new Exception("Invalid Car ID.");
 
-            // - Check if car is currently booked
-            // - Block delete if needed
             if (Utils.Utils.IsCarAvailableForBooking(carId))
-            {
-                return "Cannot delete car that is currently booked.";
-            }
+                throw new Exception("Cannot delete a car that is currently booked.");
 
             int affected = _repo.Delete(carId);
-            return affected > 0 ? "Car deleted successfully" : "Delete failed";
+            if (affected <= 0)
+                throw new Exception("Failed to delete car.");
         }
+
+        private void Validate(CarDTO car)
+        {
+            if (string.IsNullOrWhiteSpace(car.Brand))
+                throw new Exception("Brand is required.");
+
+            if (string.IsNullOrWhiteSpace(car.Model))
+                throw new Exception("Model is required.");
+
+            if (string.IsNullOrWhiteSpace(car.Category))
+                throw new Exception("Category is required.");
+
+            if (string.IsNullOrWhiteSpace(car.Available))
+                throw new Exception("Availability is required.");
+        }
+
     }
 }

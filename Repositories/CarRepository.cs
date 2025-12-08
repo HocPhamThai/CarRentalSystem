@@ -1,5 +1,5 @@
 ﻿using CarRentalSystem.DTOs;
-using CarRentalSystem.Helper.CarRentalSystem.Helper;
+using CarRentalSystem.Helper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -70,12 +70,13 @@ namespace CarRentalSystem.Repositories
                 new SqlParameter("@CarId", carId));
         }
 
-        public List<CarDTO> Search(string column, string value)
+        public List<CarDTO> Search(string column, string keyword)
         {
-            string query = $"SELECT carId, brand, model, category, available, price FROM Cars WHERE {column} = @Value";
+            column = column.ToLower();
+            string query = $"SELECT carId, brand, model, category, available, price FROM Cars WHERE {column} = '' OR {column} LIKE '%' + @keyword + '%'";
 
             DataTable dt = SQLHelper.ExecuteQuery(query,
-                new SqlParameter("@Value", value));
+                new SqlParameter("@keyword", keyword));
 
             var cars = new List<CarDTO>();
             foreach (DataRow row in dt.Rows)

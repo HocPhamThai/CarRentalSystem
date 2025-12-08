@@ -1,5 +1,7 @@
-﻿using System;
+﻿using CarRentalSystem.Helper;
+using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Linq;
@@ -13,56 +15,67 @@ namespace CarRentalSystem.Utils
     {
         public enum Role
         {
-            Admin = 0,
-            Employee = 1
+            Admin = 1,
+            Employee = 2
         }
 
         public static bool IsCarAvailableForBooking(string connectionString, DateTime fromDate, DateTime toDate, string carId)
         {
-            using (SqlConnection connection = new SqlConnection(@connectionString))
-            {
-                connection.Open();
+            string query = "SELECT COUNT(*) FROM Cars WHERE available = 'YES' " +
+                            "AND @carId NOT IN (SELECT C.carId FROM Cars C " +
+                            "INNER JOIN Bookings B ON C.carId = B.carId " +
+                            "WHERE (B.fromDate <= @toDate AND B.toDate >= @fromDate) OR (B.fromDate <= GETDATE() AND B.toDate >= GETDATE())" +
+                            "AND B.status = 'In Rental')";
 
-                string query = "SELECT COUNT(*) FROM Cars WHERE available = 'YES' " +
-                                "AND @carId NOT IN (SELECT C.carId FROM Cars C " +
-                                "INNER JOIN Bookings B ON C.carId = B.carId " +
-                                "WHERE (B.fromDate <= @toDate AND B.toDate >= @fromDate) OR (B.fromDate <= GETDATE() AND B.toDate >= GETDATE())" +
-                                "AND B.status = 'In Rental')";
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@carId", Convert.ToInt32(carId));
-                    SqlDateTime from = new SqlDateTime(fromDate.Year, fromDate.Month, fromDate.Day);
-                    command.Parameters.AddWithValue("@fromDate", from);
-                    SqlDateTime to = new SqlDateTime(fromDate.Year, fromDate.Month, fromDate.Day);
-                    command.Parameters.AddWithValue("@toDate", to);
+            int count = (int)SQLHelper.ExecuteScalar(query, 
+                new SqlParameter("@carId", Convert.ToInt32(carId)),
+                new SqlParameter("@fromDate", new SqlDateTime(fromDate.Year, fromDate.Month, fromDate.Day)),
+                new SqlParameter("@toDate", new SqlDateTime(toDate.Year, toDate.Month, toDate.Day))
+            );
 
-                    int count = (int)command.ExecuteScalar();
-
-                    connection.Close();
-                    return count > 0;
-                }
-            }
+            return count > 0;
         }
+
 
         public static bool IsCarAvailableForBooking(int carId)
         {
-            string connectionString = CarRentalSystem.Helper.AppConfigHelper.ConnectionString;
-            using (SqlConnection connection = new SqlConnection(@connectionString))
+            string query = "SELECT COUNT(*) FROM Cars WHERE available = 'YES' " +
+                            "AND @carId NOT IN (SELECT C.carId FROM Cars C " +
+                            "INNER JOIN Bookings B ON C.carId = B.carId " +
+                            "WHERE (B.fromDate <= GETDATE() AND B.toDate >= GETDATE())" +
+                            "AND B.status = 'In Rental')";
+            int count = (int)SQLHelper.ExecuteScalar(query,
+                new SqlParameter("@carId", carId)
+            );
+
+            return count > 0;
+        }
+
+        public static DataTable ConvertListToDataTable<T>(List<T> items)
+        {
+            DataTable dt = new DataTable();
+
+            // Get all public properties
+            var properties = typeof(T).GetProperties();
+
+            // Add columns based on properties
+            foreach (var prop in properties)
             {
-                connection.Open();
-                string query = "SELECT COUNT(*) FROM Cars WHERE available = 'YES' " +
-                                "AND @carId NOT IN (SELECT C.carId FROM Cars C " +
-                                "INNER JOIN Bookings B ON C.carId = B.carId " +
-                                "WHERE (B.fromDate <= GETDATE() AND B.toDate >= GETDATE())" +
-                                "AND B.status = 'In Rental')";
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@carId", carId);
-                    int count = (int)command.ExecuteScalar();
-                    connection.Close();
-                    return count > 0;
-                }
+                dt.Columns.Add(prop.Name, Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType);
             }
+
+            // Add rows
+            foreach (var item in items)
+            {
+                var row = dt.NewRow();
+                foreach (var prop in properties)
+                {
+                    row[prop.Name] = prop.GetValue(item) ?? DBNull.Value;
+                }
+                dt.Rows.Add(row);
+            }
+
+            return dt;
         }
     }
 }
