@@ -32,6 +32,25 @@ namespace CarRentalSystem.Repositories
             return customers;
         }
 
+        public string GetCustomerName(int customerId)
+        {
+            string query = "SELECT CusName FROM Customers WHERE CusId = @CusId";
+
+            DataTable dt = SQLHelper.ExecuteQuery(query,
+                new SqlParameter("@CusId", customerId));
+
+            if (dt.Rows.Count == 0)
+                return string.Empty;
+
+            return dt.Rows[0]["CusName"].ToString();
+        }
+
+        public DataTable GetAllCustomerIds()
+        {
+            string query = "SELECT CusId FROM Customers";
+            return SQLHelper.ExecuteQuery(query);
+        }
+
         public int Add(CustomerDTO customer)
         {
             string query = @"INSERT INTO Customers(cusName, cusAdd, phone) VALUES (@cusName, @cusAdd, @phone)";

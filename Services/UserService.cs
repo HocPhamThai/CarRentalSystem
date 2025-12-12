@@ -10,7 +10,12 @@ namespace CarRentalSystem.Services
 {
     public class UserService
     {
-        private readonly UserRepository _repo = new UserRepository();
+        private readonly UserRepository _repo;
+
+        public UserService() 
+        { 
+            _repo = new UserRepository();
+        }
 
         public List<UserDTO> GetAllUsers()
         {

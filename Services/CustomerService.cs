@@ -13,7 +13,12 @@ namespace CarRentalSystem.Services
 {
     public class CustomerService
     {
-       private readonly CustomerRepository _repo = new CustomerRepository();
+        private readonly CustomerRepository _repo;
+
+        public CustomerService()
+        {
+            _repo = new CustomerRepository();
+        }
 
         public List<CustomerDTO> GetAll() => _repo.GetAll();
 

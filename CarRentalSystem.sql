@@ -34,13 +34,21 @@ CREATE TABLE [dbo].[Cars] (
 
 CREATE TABLE Features
 (
-  featureId INT IDENTITY(1,1) NOT NULL,
-  featureName VARCHAR(200) NOT NULL,
-  featurePrice INT NOT NULL,
-  PRIMARY KEY (featureId)
+    featureId INT IDENTITY(1,1) NOT NULL,
+    featureName VARCHAR(200) NOT NULL,
+    featurePrice INT NOT NULL,
+    PRIMARY KEY (featureId)
 );
 
-CREATE TABLE Bookings
+CREATE TABLE [dbo].[Fuels]
+(
+    fuelId INT IDENTITY(1,1) NOT NULL,
+    fuelName VARCHAR(200) NOT NULL,
+    fuelPrice INT NOT NULL
+    PRIMARY KEY (fuelId)
+)
+
+CREATE TABLE [dbo].[Bookings]
 (
   bookingId INT IDENTITY(1,1) NOT NULL,
   fromDate DATE NOT NULL,
@@ -71,6 +79,10 @@ CREATE TABLE Schedules
   fromPlace VARCHAR(200) NOT NULL,
   toPlace VARCHAR(200) NOT NULL,
   scheduleId INT IDENTITY(1,1) NOT NULL,
+  dateDelay DATE NULL,
+  dateReturn DATE NULL,
+  fineCost INT NULL,
+  totalCost INT NULL,
   carId INT NOT NULL,
   bookingId INT NOT NULL,
   PRIMARY KEY (scheduleId),
@@ -103,6 +115,8 @@ INSERT INTO [dbo].[Features] ([featureName], [featurePrice]) VALUES ('USB Port',
 INSERT INTO [dbo].[Features] ([featureName], [featurePrice]) VALUES ('All-Wheel Drive', 200);
 INSERT INTO [dbo].[Features] ([featureName], [featurePrice]) VALUES ('Pickup Truck Bed Cover', 200);
 INSERT INTO [dbo].[Features] ([featureName], [featurePrice]) VALUES ('360-degree Camera', 150);
+
+INSERT INTO [dbo].[Fuels] ([fuelName], [fuelPrice]) VALUES ('Gasoline', 150), ('Diesel', 140), ('Electric', 100);
 
 --------------------------------------------------------
 -- Users

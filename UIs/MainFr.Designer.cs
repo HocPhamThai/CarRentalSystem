@@ -50,9 +50,10 @@
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Segoe UI", 24F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.ForeColor = System.Drawing.Color.White;
-            this.label1.Location = new System.Drawing.Point(404, 6);
+            this.label1.Location = new System.Drawing.Point(303, 5);
+            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(364, 54);
+            this.label1.Size = new System.Drawing.Size(288, 45);
             this.label1.TabIndex = 12;
             this.label1.Text = "Car Rental System";
             // 
@@ -61,9 +62,10 @@
             this.btnCar.BackColor = System.Drawing.Color.Red;
             this.btnCar.Font = new System.Drawing.Font("Segoe UI Semibold", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCar.ForeColor = System.Drawing.Color.White;
-            this.btnCar.Location = new System.Drawing.Point(239, 165);
+            this.btnCar.Location = new System.Drawing.Point(154, 134);
+            this.btnCar.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnCar.Name = "btnCar";
-            this.btnCar.Size = new System.Drawing.Size(157, 48);
+            this.btnCar.Size = new System.Drawing.Size(118, 39);
             this.btnCar.TabIndex = 14;
             this.btnCar.Text = "CARS";
             this.btnCar.UseVisualStyleBackColor = false;
@@ -72,11 +74,12 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Font = new System.Drawing.Font("Snap ITC", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label5.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label5.ForeColor = System.Drawing.Color.White;
-            this.label5.Location = new System.Drawing.Point(460, 69);
+            this.label5.Location = new System.Drawing.Point(345, 56);
+            this.label5.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(262, 51);
+            this.label5.Size = new System.Drawing.Size(171, 37);
             this.label5.TabIndex = 13;
             this.label5.Text = "Main Form";
             // 
@@ -88,8 +91,9 @@
             this.panel1.Controls.Add(this.label5);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel1.Location = new System.Drawing.Point(0, 0);
+            this.panel1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1202, 138);
+            this.panel1.Size = new System.Drawing.Size(902, 112);
             this.panel1.TabIndex = 15;
             // 
             // lbExit
@@ -98,9 +102,10 @@
             this.lbExit.BackColor = System.Drawing.Color.Red;
             this.lbExit.Font = new System.Drawing.Font("Segoe UI", 18F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lbExit.ForeColor = System.Drawing.Color.White;
-            this.lbExit.Location = new System.Drawing.Point(1154, 6);
+            this.lbExit.Location = new System.Drawing.Point(866, 5);
+            this.lbExit.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.lbExit.Name = "lbExit";
-            this.lbExit.Size = new System.Drawing.Size(36, 41);
+            this.lbExit.Size = new System.Drawing.Size(28, 32);
             this.lbExit.TabIndex = 15;
             this.lbExit.Text = "X";
             this.lbExit.Click += new System.EventHandler(this.lbExit_Click);
@@ -109,9 +114,10 @@
             // 
             this.panel2.BackColor = System.Drawing.Color.Red;
             this.panel2.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel2.Location = new System.Drawing.Point(0, 628);
+            this.panel2.Location = new System.Drawing.Point(0, 510);
+            this.panel2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(1202, 45);
+            this.panel2.Size = new System.Drawing.Size(902, 37);
             this.panel2.TabIndex = 16;
             // 
             // btnCustomer
@@ -119,9 +125,10 @@
             this.btnCustomer.BackColor = System.Drawing.Color.Red;
             this.btnCustomer.Font = new System.Drawing.Font("Segoe UI Semibold", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnCustomer.ForeColor = System.Drawing.Color.White;
-            this.btnCustomer.Location = new System.Drawing.Point(402, 165);
+            this.btnCustomer.Location = new System.Drawing.Point(277, 134);
+            this.btnCustomer.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnCustomer.Name = "btnCustomer";
-            this.btnCustomer.Size = new System.Drawing.Size(176, 48);
+            this.btnCustomer.Size = new System.Drawing.Size(132, 39);
             this.btnCustomer.TabIndex = 17;
             this.btnCustomer.Text = "CUSTOMERS";
             this.btnCustomer.UseVisualStyleBackColor = false;
@@ -132,9 +139,10 @@
             this.btnBookings.BackColor = System.Drawing.Color.Red;
             this.btnBookings.Font = new System.Drawing.Font("Segoe UI Semibold", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnBookings.ForeColor = System.Drawing.Color.White;
-            this.btnBookings.Location = new System.Drawing.Point(584, 165);
+            this.btnBookings.Location = new System.Drawing.Point(413, 134);
+            this.btnBookings.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnBookings.Name = "btnBookings";
-            this.btnBookings.Size = new System.Drawing.Size(200, 48);
+            this.btnBookings.Size = new System.Drawing.Size(150, 39);
             this.btnBookings.TabIndex = 18;
             this.btnBookings.Text = "BOOKINGS";
             this.btnBookings.UseVisualStyleBackColor = false;
@@ -145,9 +153,10 @@
             this.btnSchedules.BackColor = System.Drawing.Color.Red;
             this.btnSchedules.Font = new System.Drawing.Font("Segoe UI Semibold", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnSchedules.ForeColor = System.Drawing.Color.White;
-            this.btnSchedules.Location = new System.Drawing.Point(790, 165);
+            this.btnSchedules.Location = new System.Drawing.Point(567, 134);
+            this.btnSchedules.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnSchedules.Name = "btnSchedules";
-            this.btnSchedules.Size = new System.Drawing.Size(173, 48);
+            this.btnSchedules.Size = new System.Drawing.Size(130, 39);
             this.btnSchedules.TabIndex = 19;
             this.btnSchedules.Text = "SCHEDULES";
             this.btnSchedules.UseVisualStyleBackColor = false;
@@ -158,9 +167,10 @@
             this.btnLogout.BackColor = System.Drawing.Color.Red;
             this.btnLogout.Font = new System.Drawing.Font("Segoe UI Semibold", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnLogout.ForeColor = System.Drawing.Color.White;
-            this.btnLogout.Location = new System.Drawing.Point(522, 574);
+            this.btnLogout.Location = new System.Drawing.Point(392, 466);
+            this.btnLogout.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnLogout.Name = "btnLogout";
-            this.btnLogout.Size = new System.Drawing.Size(157, 48);
+            this.btnLogout.Size = new System.Drawing.Size(118, 39);
             this.btnLogout.TabIndex = 21;
             this.btnLogout.Text = "Logout";
             this.btnLogout.UseVisualStyleBackColor = false;
@@ -169,9 +179,10 @@
             // pictureBox1
             // 
             this.pictureBox1.Image = global::CarRentalSystem.Properties.Resources.AUDI_2cho;
-            this.pictureBox1.Location = new System.Drawing.Point(363, 242);
+            this.pictureBox1.Location = new System.Drawing.Point(272, 197);
+            this.pictureBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(477, 335);
+            this.pictureBox1.Size = new System.Drawing.Size(358, 272);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox1.TabIndex = 11;
             this.pictureBox1.TabStop = false;
@@ -181,9 +192,10 @@
             this.btnUser.BackColor = System.Drawing.Color.Red;
             this.btnUser.Font = new System.Drawing.Font("Segoe UI Semibold", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnUser.ForeColor = System.Drawing.Color.White;
-            this.btnUser.Location = new System.Drawing.Point(76, 165);
+            this.btnUser.Location = new System.Drawing.Point(32, 134);
+            this.btnUser.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnUser.Name = "btnUser";
-            this.btnUser.Size = new System.Drawing.Size(157, 48);
+            this.btnUser.Size = new System.Drawing.Size(118, 39);
             this.btnUser.TabIndex = 22;
             this.btnUser.Text = "USERS";
             this.btnUser.UseVisualStyleBackColor = false;
@@ -194,9 +206,10 @@
             this.btnDashBoard.BackColor = System.Drawing.Color.Red;
             this.btnDashBoard.Font = new System.Drawing.Font("Segoe UI Semibold", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnDashBoard.ForeColor = System.Drawing.Color.White;
-            this.btnDashBoard.Location = new System.Drawing.Point(969, 165);
+            this.btnDashBoard.Location = new System.Drawing.Point(702, 134);
+            this.btnDashBoard.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.btnDashBoard.Name = "btnDashBoard";
-            this.btnDashBoard.Size = new System.Drawing.Size(230, 48);
+            this.btnDashBoard.Size = new System.Drawing.Size(172, 39);
             this.btnDashBoard.TabIndex = 23;
             this.btnDashBoard.Text = "DASHBOARD";
             this.btnDashBoard.UseVisualStyleBackColor = false;
@@ -204,9 +217,9 @@
             // 
             // MainFr
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1202, 673);
+            this.ClientSize = new System.Drawing.Size(902, 547);
             this.Controls.Add(this.btnDashBoard);
             this.Controls.Add(this.btnUser);
             this.Controls.Add(this.btnLogout);
@@ -218,6 +231,7 @@
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.btnCar);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "MainFr";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "MainForm";

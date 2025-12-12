@@ -1,4 +1,7 @@
-﻿using System;
+﻿using CarRentalSystem.DTOs;
+using CarRentalSystem.Helper;
+using CarRentalSystem.Services;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -11,27 +14,24 @@ namespace CarRentalSystem
 {
     public partial class BookingsFr : Form
     {
-
-        string connectionString = "Data Source=HocPham\\SQLEXPRESS;Initial Catalog=CarRentaDb;Integrated Security=True;Connect Timeout=30;Encrypt=False;";
-        private SqlDataAdapter adapter;
-        private SqlDataReader reader;
-        private SqlCommandBuilder commandBuilder;
-        private Dictionary<string, int> decsFeatureAndFuels = new Dictionary<string, int>();
-        private int totalPriceFuelAndFeature = 0;
-        private int totalPriceBetweenDate = 0;
-        private int totalPrice = 0; // equal priceOFcarPerDate * Date rent (totalPriceBetweenDate) + totalPriceFuelAndFeature;
-        private int priceOfCarPerDate = 0;
-        private MainFr mainFr;
+        private readonly BookingService _bookingService = new BookingService();
+        private readonly CarService _carService = new CarService();
+        private readonly MainFr _mainFr;
         private readonly Role _role;
+        private Dictionary<string, int> _descFeatureAndFuels = new Dictionary<string, int>();
+        private int _totalPriceFuelAndFeature = 0;
+        private int _totalPriceBetweenDate = 0;
+        private int _totalPrice = 0;
+        private int _priceOfCarPerDate = 0;
 
         public BookingsFr(MainFr main, Role role)
         {
             InitializeComponent();
-            this.mainFr = main;
-            this._role = role;
+            _mainFr = main;
+            _role = role;
         }
 
-        private void resetTextBox()
+        private void ResetTextBox()
         {
             tbBookingId.Text = string.Empty;
             cbCarId.SelectedValue = -1;
@@ -40,42 +40,328 @@ namespace CarRentalSystem
             tbFee.Text = string.Empty;
             cBCusId.SelectedValue = -1;
             tbName.Text = string.Empty;
-            //reset checkbox
+
+            // Reset checkboxes and radio buttons
             foreach (Control control in this.Controls)
             {
-                if (control is CheckBox)
+                if (control is CheckBox checkBox)
                 {
-                    CheckBox checkBox = (CheckBox)control;
                     checkBox.Checked = false;
                 }
-                if(control is RadioButton)
+                else if (control is RadioButton radioButton)
                 {
-                    RadioButton radioButton = (RadioButton)control;
                     radioButton.Checked = false;
                 }
             }
+
             tbFromPlace.Text = string.Empty;
             tbToPlace.Text = string.Empty;
             dtpFromDate.Value = DateTime.Now;
             dtpToDate.Value = DateTime.Now;
             tbPrice.Text = string.Empty;
-            //tbRentFee.Text = string.Empty;
+
+            // Reset price tracking
+            _totalPriceFuelAndFeature = 0;
+            _totalPriceBetweenDate = 0;
+            _totalPrice = 0;
+            _descFeatureAndFuels.Clear();
         }
 
-        private void loadBookings()
+        private void LoadBookings()
         {
             try
             {
-                string query = "SELECT bookingId, carId , B.CusId, CusName , fromDate, toDate, status, description, totalCost FROM Bookings B, Customers Cus Where B.CusId = Cus.CusId";
-                using (SqlConnection conn = new SqlConnection(connectionString))
-                {
-                    conn.Open();
-                    adapter = new SqlDataAdapter(query, conn);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
+                List<BookingDTO> bookings = _bookingService.GetAllBookings();
+                DataTable dt = ConvertListToDataTable(bookings);
+                bookingDGV.DataSource = dt;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading booking data: " + ex.Message);
+            }
+        }
 
-                    bookingDGV.DataSource = dt;
+        private void FillComboCarId()
+        {
+            try
+            {
+                List<CarDTO> cars = _carService.GetAllCars();
+                DataTable dt = new DataTable();
+                dt.Columns.Add("carId", typeof(int));
+
+                foreach (var car in cars)
+                {
+                    dt.Rows.Add(car.CarId);
                 }
+
+                cbCarId.ValueMember = "carId";
+                cbCarId.DataSource = dt;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading cars: " + ex.Message);
+            }
+        }
+
+        private void FillCustomer()
+        {
+            try
+            {
+                DataTable dt = _bookingService.GetAllCustomerIds();
+                cBCusId.ValueMember = "CusId";
+                cBCusId.DataSource = dt;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading customers: " + ex.Message);
+            }
+        }
+
+        private void FetchCustomer()
+        {
+            if (string.IsNullOrEmpty(cBCusId.Text)) return;
+
+            try
+            {
+                string customerName = _bookingService.GetCustomerName(int.Parse(cBCusId.Text));
+                tbName.Text = customerName;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error fetching customer: " + ex.Message);
+            }
+        }
+
+        private void FillTextBoxCarInfo()
+        {
+            if (string.IsNullOrEmpty(cbCarId.Text)) return;
+
+            try
+            {
+                CarDTO car = _bookingService.GetCarById(int.Parse(cbCarId.Text));
+                if (car != null)
+                {
+                    tbModel.Text = car.Model;
+                    tbBrand.Text = car.Brand;
+                    tbSeat.Text = car.Category;
+                    _priceOfCarPerDate = car.Price;
+                    tbFee.Text = car.Price.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading car info: " + ex.Message);
+            }
+        }
+
+        private BookingDTO BuildBookingDto()
+        {
+            string desc = string.Join("\n", _descFeatureAndFuels.Select(p => $"{p.Key} - {p.Value}"));
+
+            return new BookingDTO
+            {
+                BookingId = string.IsNullOrEmpty(tbBookingId.Text) ? 0 : int.Parse(tbBookingId.Text),
+                CarId = int.Parse(cbCarId.SelectedValue.ToString()),
+                CusId = int.Parse(cBCusId.SelectedValue.ToString()),
+                FromDate = dtpFromDate.Value.ToString("yyyy-MM-dd HH:mm:ss"),
+                ToDate = dtpToDate.Value.ToString("yyyy-MM-dd HH:mm:ss"),
+                Status = "In Rental",
+                Description = desc,
+                TotalCost = _totalPrice
+            };
+        }
+
+        private ScheduleDTO BuildScheduleDto(int carId)
+        {
+            return new ScheduleDTO
+            {
+                FromPlace = tbFromPlace.Text,
+                ToPlace = tbToPlace.Text,
+                CarId = carId
+            };
+        }
+
+        private bool ValidateBookingInput()
+        {
+            int checkedRadioButtons = this.Controls.OfType<RadioButton>().Count(rb => rb.Checked);
+
+            if (string.IsNullOrEmpty(cbCarId.Text) ||
+                string.IsNullOrEmpty(cBCusId.Text) ||
+                string.IsNullOrEmpty(tbPrice.Text) ||
+                string.IsNullOrEmpty(tbFromPlace.Text) ||
+                string.IsNullOrEmpty(tbToPlace.Text) ||
+                checkedRadioButtons != 1)
+            {
+                MessageBox.Show("Missing Information");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void LoadFeaturePrice(string featureName, bool isChecked)
+        {
+            try
+            {
+                int featurePrice = _bookingService.GetFeaturePrice(featureName);
+
+                if (isChecked)
+                {
+                    _totalPriceFuelAndFeature += featurePrice;
+                    _descFeatureAndFuels[featureName] = featurePrice;
+                }
+                else
+                {
+                    _totalPriceFuelAndFeature -= featurePrice;
+                    _descFeatureAndFuels.Remove(featureName);
+                }
+
+                LoadTotalPrice();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading feature price: " + ex.Message);
+            }
+        }
+
+        private void LoadFuelPrice(string fuelName, bool isChecked)
+        {
+            try
+            {
+                int fuelPrice = _bookingService.GetFuelPrice(fuelName);
+
+                if (isChecked)
+                {
+                    _totalPriceFuelAndFeature += fuelPrice;
+                    _descFeatureAndFuels[fuelName] = fuelPrice;
+                }
+                else
+                {
+                    _totalPriceFuelAndFeature -= fuelPrice;
+                    _descFeatureAndFuels.Remove(fuelName);
+                }
+
+                LoadTotalPrice();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading fuel price: " + ex.Message);
+            }
+        }
+
+        private void LoadTotalPerDate()
+        {
+            DateTime fromDate = dtpFromDate.Value.Date;
+            DateTime toDate = dtpToDate.Value.Date;
+
+            if (fromDate <= toDate)
+            {
+                TimeSpan duration = toDate - fromDate;
+                int days = duration.Days;
+                _totalPriceBetweenDate = (days + 1) * _priceOfCarPerDate;
+            }
+            else
+            {
+                dtpFromDate.ValueChanged -= dtpFromDate_ValueChanged;
+                dtpToDate.ValueChanged -= dtpToDate_ValueChanged;
+                dtpFromDate.Value = DateTime.Now;
+                dtpToDate.Value = DateTime.Now;
+                dtpFromDate.ValueChanged += dtpFromDate_ValueChanged;
+                dtpToDate.ValueChanged += dtpToDate_ValueChanged;
+                MessageBox.Show("From date must be before or equal to 'To date'.");
+                tbPrice.Text = "0";
+            }
+
+            LoadTotalPrice();
+        }
+
+        private void LoadTotalPrice()
+        {
+            _totalPrice = _totalPriceFuelAndFeature + _totalPriceBetweenDate;
+            tbPrice.Text = _totalPrice.ToString();
+        }
+
+        private void DisplayBookingDetails(int bookingId)
+        {
+            try
+            {
+                BookingDTO booking = _bookingService.GetBookingById(bookingId);
+
+                if (booking == null)
+                {
+                    MessageBox.Show("Booking not found.");
+                    return;
+                }
+
+                DateTime fromDate;
+                DateTime toDate;
+                int days = 0;
+
+                // Safe date parsing
+                if (DateTime.TryParse(booking.FromDate, out fromDate) && 
+                    DateTime.TryParse(booking.ToDate, out toDate))
+                {
+                    days = (toDate - fromDate).Days;
+                }
+                else
+                {
+                    MessageBox.Show("Invalid date format in booking data.");
+                    return;
+                }
+
+                string customerName = _bookingService.GetCustomerName(booking.CusId) ?? "Unknown";
+                CarDTO car = _bookingService.GetCarById(booking.CarId);
+                string carDetails = car != null 
+                    ? $"{car.Model} {car.Brand} {car.Category} {car.Price}$/Day" 
+                    : "Car details not available";
+
+                // Safe conversion of TotalCost
+                string totalCostDisplay = booking.TotalCost.ToString() ?? "0";
+
+                string bookingDetails =
+                    $"Booking ID: {booking.BookingId}\n" +
+                    $"From Date: {booking.FromDate ?? "N/A"}\n" +
+                    $"To Date: {booking.ToDate ?? "N/A"}\n" +
+                    $"Status: {booking.Status ?? "Unknown"}\n" +
+                    $"Customer Name: {customerName}\n" +
+                    $"Car Details: \n\t{carDetails} ({days + 1} Days)\n" +
+                    $"Decriptions: {booking.Description ?? "No description"}\n" +
+                    $"Total Cost: {totalCostDisplay}$";
+
+                MessageBox.Show(bookingDetails);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error displaying booking details: " + ex.Message);
+            }
+        }
+
+        // Event Handlers
+        private void Rental_Load(object sender, EventArgs e)
+        {
+            tbBookingId.Hide();
+            FillComboCarId();
+            FillCustomer();
+            LoadBookings();
+
+            btnAdd.BringToFront();
+        }
+
+        private void btnAdd_Click(object sender, EventArgs e)
+        {
+            if (!ValidateBookingInput()) return;
+
+            try
+            {
+                BookingDTO bookingDto = BuildBookingDto();
+                ScheduleDTO scheduleDto = BuildScheduleDto(int.Parse(cbCarId.SelectedValue.ToString()));
+
+                _bookingService.AddBooking(bookingDto, scheduleDto);
+
+                MessageBox.Show("Booking created successfully!");
+                LoadBookings();
+                FillComboCarId();
+                ResetTextBox();
             }
             catch (Exception ex)
             {
@@ -83,415 +369,14 @@ namespace CarRentalSystem
             }
         }
 
-        private void fillComboCarId()
-        {
-            string query = "Select CarId from Cars";
-            using(SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                using(SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    reader = cmd.ExecuteReader();
-                    DataTable dt = new DataTable();
-                    dt.Columns.Add("carId", typeof(int));
-                    dt.Load(reader);
-                    cbCarId.ValueMember = "carId";
-                    cbCarId.DataSource = dt;
-                }
-            }
-        }
-
-
-        private void fetchCustomer()
-        {
-            string query = "Select CusName From Customers where CusId = @CusId";
-            using (SqlConnection conn = new SqlConnection(connectionString))                                       
-            {
-                conn.Open();
-                using(SqlCommand command = new SqlCommand(query, conn))
-                {
-                    command.Parameters.AddWithValue("@CusId", cBCusId.Text);    
-                    adapter = new SqlDataAdapter(command);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    foreach(DataRow row in dt.Rows)
-                    {
-                        tbName.Text = row["CusName"].ToString();
-                    }
-                }
-            }
-        }
-
-        private void fillCustomer()
-        {
-            string query = "Select CusId from Customers";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    reader = cmd.ExecuteReader();
-                    DataTable dt = new DataTable();
-                    dt.Columns.Add("CusId", typeof(int));
-                    dt.Load(reader);
-                    cBCusId.ValueMember = "CusId";
-                    cBCusId.DataSource = dt;
-                }
-            }
-        }
-
-        private void Rental_Load(object sender, EventArgs e)
-        {
-
-            tbBookingId.Hide();
-            fillComboCarId();
-            fillCustomer();
-            loadBookings();
-        }
-
-
-
-        private void lbExit_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
-        }
-
-        private void ckbMap_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckbMap.Text, ckbMap.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBBluetooth_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBBluetooth.Text, ckBBluetooth.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBRearCamera_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBRearCamera.Text, ckBRearCamera.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBSideView_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBSideView.Text, ckBSideView.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBDashboard_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBDashboard.Text, ckBDashboard.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBSpeedAlert_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBSpeedAlert.Text, ckBSpeedAlert.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckTirePressure_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckTirePressure.Text, ckTirePressure.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBCollinsion_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBCollinsion.Text, ckBCollinsion.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBSunroof_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBSunroof.Text, ckBSunroof.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBGPSNavigation_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBGPSNavigation.Text , ckBGPSNavigation.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBUSBPort_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBUSBPort.Text , ckBUSBPort.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBAllWheel_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBAllWheel.Text , ckBAllWheel.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckBPickupBed_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckBPickupBed.Text , ckBPickupBed.Checked);
-            loadTotalPrice();
-        }
-
-        private void ckB360_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFeaturePrice(ckB360.Text , ckB360.Checked);
-            loadTotalPrice();
-        }
-
-        private void btnBack_Click(object sender, EventArgs e)
-        {
-            this.Close();
-            mainFr.RefreshRoleUI();
-            mainFr.Show();
-        }
-
-        private void btnAdd_Click(object sender, EventArgs e)
-        {
-            // get descripton for Bookings
-            string desc = "";
-            foreach (var pair in decsFeatureAndFuels)
-            {
-                desc += $"{pair.Key} - {pair.Value}\n";
-            }
-            // check radiobutton check or not
-            int checkedCount = 0;
-
-            foreach (RadioButton radioButton in this.Controls.OfType<RadioButton>())
-            {
-                if (radioButton.Checked)
-                {
-                    checkedCount++;
-                }
-            }
-            if (String.IsNullOrEmpty(cbCarId.Text) || String.IsNullOrEmpty(dtpFromDate.Value.ToString())
-           || String.IsNullOrEmpty(dtpToDate.Value.ToString())
-           || String.IsNullOrEmpty(cBCusId.Text)
-           || String.IsNullOrEmpty(tbPrice.Text)
-           || String.IsNullOrEmpty(tbFromPlace.Text)
-           || String.IsNullOrEmpty(tbToPlace.Text)  
-           || checkedCount != 1 
-           )
-            {
-                MessageBox.Show("Missing Information");
-            }
-            else
-            {
-                DateTime fromDate = dtpFromDate.Value;
-                DateTime toDate = dtpToDate.Value;
-                if (Utils.Utils.IsCarAvailableForBooking(connectionString, fromDate, toDate, cbCarId.Text))
-                {
-                    try
-                    {
-                        using (SqlConnection conn = new SqlConnection(@connectionString))
-                        {
-                            conn.Open();
-                            SqlTransaction transaction = conn.BeginTransaction();
-                            using (SqlCommand cmd = conn.CreateCommand())
-                            {
-                                int bookingID = -1;
-
-                                // Command 1: Add a Booking
-                                cmd.Transaction = transaction;
-                                cmd.CommandText = "INSERT INTO Bookings(fromDate, toDate, status, cusId, carId, description, totalCost) " +
-                                    "OUTPUT INSERTED.bookingId " +
-                                    "VALUES (@fromDate, @toDate, @status, @cusId, @carId, @description, @totalCost)";
-                                cmd.Parameters.AddWithValue("@fromDate", dtpFromDate.Value.ToString());
-                                cmd.Parameters.AddWithValue("@toDate", dtpToDate.Value.ToString());
-                                cmd.Parameters.AddWithValue("@status", "In Rental");
-                                cmd.Parameters.AddWithValue("@cusId", cBCusId.SelectedValue.ToString());
-                                cmd.Parameters.AddWithValue("@carId", cbCarId.SelectedValue.ToString());
-                                cmd.Parameters.AddWithValue("@description", desc);
-                                cmd.Parameters.AddWithValue("@totalCost", totalPrice);
-
-                                bookingID = (int)cmd.ExecuteScalar();
-
-                                if (bookingID != -1) // Check if bookingID was successfully retrieved
-                                {
-                                    // Command 2: Add a Schedule
-                                    cmd.CommandText = "INSERT INTO Schedules(fromPlace, toPlace, dateDelay, dateReturn, fineCost, totalCost, bookingId, carId) " +
-                                        "VALUES (@fromPlace, @toPlace, @dateDelay, @dateReturn, @fineCost, @totalCost, @bookingId, @carId)";
-                                    cmd.Parameters.Clear();
-                                    cmd.Parameters.AddWithValue("@fromPlace", tbFromPlace.Text);
-                                    cmd.Parameters.AddWithValue("@toPlace", tbToPlace.Text);
-                                    cmd.Parameters.AddWithValue("@dateDelay", DBNull.Value);
-                                    cmd.Parameters.AddWithValue("@dateReturn", DBNull.Value);
-                                    cmd.Parameters.AddWithValue("@fineCost", DBNull.Value);
-                                    cmd.Parameters.AddWithValue("@totalCost", DBNull.Value);
-                                    cmd.Parameters.AddWithValue("@carId", cbCarId.SelectedValue.ToString());
-                                    cmd.Parameters.AddWithValue("@bookingId", bookingID); // Use the obtained booking ID
-
-                                    int rowsEffected = cmd.ExecuteNonQuery();
-                                    if (rowsEffected > 0)
-                                    {
-                                        transaction.Commit();
-                                        MessageBox.Show("Created Successfully");
-                                        loadBookings();
-                                        //UpdateAvailable();
-                                        fillComboCarId();
-                                        resetTextBox();
-                                    }
-                                    else
-                                    {
-                                        transaction.Rollback();
-                                        MessageBox.Show("Failed to create the Schedule!!!");
-                                    }
-                                }
-                                else
-                                {
-                                    transaction.Rollback();
-                                    MessageBox.Show("Failed to retrieve BookingID.");
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception Ex)
-                    {
-                        MessageBox.Show(Ex.Message);
-                    }
-                } else
-                {
-                    MessageBox.Show("Car is Rented!!. Please check FromDate and ToDate for this car.");
-                }
-            }
-        }
-
         private void cbCarId_SelectedValueChanged(object sender, EventArgs e)
         {
-            fillTextBoxCarInfo();
-        }
-
-        private void fillTextBoxCarInfo()
-        {
-            string query2 = "Select * From Cars Where CarId = @CarId";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand(query2, conn))
-                {
-                    cmd.Parameters.AddWithValue("@CarId", cbCarId.Text);
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        string carBrand = reader["brand"].ToString();
-                        string carModel = reader["model"].ToString();
-                        string carCategory = reader["category"].ToString();
-                        int price = Convert.ToInt32(reader["price"]);
-                        tbModel.Text = carModel;
-                        tbBrand.Text = carBrand;
-                        tbSeat.Text = carCategory;
-                        priceOfCarPerDate = price;
-                        tbFee.Text = price.ToString();
-                    }
-                }
-            }
+            FillTextBoxCarInfo();
         }
 
         private void cBCusId_SelectedValueChanged(object sender, EventArgs e)
         {
-            fetchCustomer();
-        }
-
-        private void loadFeaturePrice(string featureName, bool isChecked)
-        {
-            string query = "Select featurePrice from Features where featureName = '"+featureName+"'";
-            using (SqlConnection conn = new SqlConnection(@connectionString))
-            {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    //cmd.Parameters.AddWithValue("@featureName", featureName);
-                    SqlDataReader reader = cmd.ExecuteReader(); 
-                    while(reader.Read())
-                    {
-                        int featurePrice = reader.GetInt32(reader.GetOrdinal("featurePrice")); ;
-                        if(isChecked)
-                        {
-                            totalPriceFuelAndFeature += featurePrice;
-                            decsFeatureAndFuels[featureName] = featurePrice;
-                        } else
-                        {
-                            totalPriceFuelAndFeature -= featurePrice; 
-                            decsFeatureAndFuels.Remove(featureName);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void loadFuelPrice(string fuelName, bool isChecked)
-        {
-            string query = "Select fuelPrice from Fuels where fuelName = '" + fuelName + "'";
-            using (SqlConnection conn = new SqlConnection(@connectionString))
-            {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    //cmd.Parameters.AddWithValue("@featureName", featureName);
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        int fuelPrice = reader.GetInt32(reader.GetOrdinal("fuelPrice")); ;
-                        if (isChecked)
-                        {
-                            totalPriceFuelAndFeature += fuelPrice;
-                            decsFeatureAndFuels[fuelName] = fuelPrice;
-                        }
-                        else
-                        {
-                            totalPriceFuelAndFeature -= fuelPrice;
-                            decsFeatureAndFuels.Remove(fuelName);
-                        }
-                    }
-                }
-            }
-            
-        }
-
-        private void rBAll_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFuelPrice(rBAll.Text, rBAll.Checked);
-            loadTotalPrice();
-        }
-
-        private void rBGas_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFuelPrice(rBGas.Text, rBGas.Checked);
-            loadTotalPrice();
-        }
-
-        private void rBDiesel_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFuelPrice(rBDiesel.Text, rBDiesel.Checked);
-            loadTotalPrice();
-        }
-
-        private void rBElectric_CheckedChanged(object sender, EventArgs e)
-        {
-            loadFuelPrice(rBElectric.Text, rBElectric.Checked);
-            loadTotalPrice();
-        }
-
-        private void bookingDGV_CellClick(object sender, DataGridViewCellEventArgs e)
-        {
-            try
-            {
-                if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
-                {
-                    DataGridViewCell cell = bookingDGV.Rows[e.RowIndex].Cells[e.ColumnIndex];
-
-                    cell.Style.SelectionBackColor = Color.Red;
-                }
-                if (e.RowIndex >= 0)
-                {
-                    DisplayBookingDetails(Convert.ToInt32(bookingDGV.Rows[e.RowIndex].Cells[0].Value.ToString()));
-                }
-            } catch (Exception ex)
-            {
-                MessageBox.Show("Pleae selected agains");
-            }
-        
+            FetchCustomer();
         }
 
         private void dtpFromDate_ValueChanged(object sender, EventArgs e)
@@ -501,134 +386,144 @@ namespace CarRentalSystem
 
             if (selectedDate < currentDate)
             {
-                dtpFromDate.ValueChanged -= dtpFromDate_ValueChanged; // Temporarily detach the event handler
+                dtpFromDate.ValueChanged -= dtpFromDate_ValueChanged;
                 dtpFromDate.Value = currentDate;
-                dtpFromDate.ValueChanged += dtpFromDate_ValueChanged; // Reattach the event handler
-                MessageBox.Show("The FromDate must be from now time!!");
+                dtpFromDate.ValueChanged += dtpFromDate_ValueChanged;
+                MessageBox.Show("The FromDate must be from now time!");
             }
 
-            loadTotalPerDate();
+            LoadTotalPerDate();
         }
 
         private void dtpToDate_ValueChanged(object sender, EventArgs e)
         {
-            loadTotalPerDate();
-        }
-        private void loadTotalPerDate()
-        {
-            DateTime d1 = dtpFromDate.Value.Date;
-            DateTime d2 = dtpToDate.Value.Date;
-            if(d1 <= d2)
-            {
-                TimeSpan ts = d2 - d1;
-
-                int dayDiff = ts.Days;
-                totalPriceBetweenDate = (dayDiff + 1) * priceOfCarPerDate;
-            } else
-            {
-                dtpFromDate.ValueChanged -= dtpFromDate_ValueChanged;
-                dtpToDate.ValueChanged -= dtpToDate_ValueChanged;
-                dtpFromDate.Value = DateTime.Now; dtpToDate.Value = DateTime.Now;
-                dtpFromDate.ValueChanged += dtpFromDate_ValueChanged;
-                dtpToDate.ValueChanged += dtpToDate_ValueChanged;
-                MessageBox.Show("From date must before or equal to 'To date'.");
-                tbPrice.Text = "0";
-            }
-            loadTotalPrice();
+            LoadTotalPerDate();
         }
 
-        private void loadTotalPrice()
+        private void bookingDGV_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            totalPrice = totalPriceFuelAndFeature + totalPriceBetweenDate;
-            tbPrice.Text = totalPrice.ToString();
-        }
-
-        //booking details
-        private void DisplayBookingDetails(int bookingId)
-        {
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            try
             {
-                connection.Open();
-                using (SqlCommand cmd = new SqlCommand("SELECT * FROM Bookings WHERE bookingId = @bookingId", connection))
+                if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
                 {
-                    cmd.Parameters.AddWithValue("@bookingId", bookingId);
+                    DataGridViewCell cell = bookingDGV.Rows[e.RowIndex].Cells[e.ColumnIndex];
+                    cell.Style.SelectionBackColor = Color.Red;
+                }
 
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            DateTime fromDate = (DateTime)reader["fromDate"];
-                            DateTime toDate = (DateTime)reader["toDate"];
-                            TimeSpan duration = toDate - fromDate;
-                            int days = duration.Days;
-                            string bookingDetails =
-                                $"Booking ID: {bookingId}\n" +
-                                $"From Date: {reader["fromDate"]}\n" +
-                                $"To Date: {reader["toDate"]}\n" +
-                                $"Status: {reader["status"]}\n" +
-                                $"Customer Name: {GetCustomerName(Convert.ToInt32(reader["cusId"]))}\n" +
-                                $"Car Details: \n{GetCarDetails(Convert.ToInt32(reader["carId"]))} ({days + 1} Days)\n" +
-                                $"{reader["description"]}\n" +
-                                $"Total Cost: {reader["totalCost"]}$";
-
-                            MessageBox.Show(bookingDetails);
-                        }
-                        else
-                        {
-                            MessageBox.Show("Booking not found.");
-                        }
-                    }
+                if (e.RowIndex >= 0)
+                {
+                    int bookingId = Convert.ToInt32(bookingDGV.Rows[e.RowIndex].Cells[0].Value);
+                    DisplayBookingDetails(bookingId);
                 }
             }
+            catch (Exception)
+            {
+                MessageBox.Show("Please select again");
+            }
         }
 
-        private string GetCustomerName(int customerId)
+        private void btnBack_Click(object sender, EventArgs e)
         {
-            string query = "Select CusName From Customers where CusId = @CusId";
-            string result = "";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                using (SqlCommand command = new SqlCommand(query, conn))
-                {
-                    command.Parameters.AddWithValue("@CusId", customerId);
-                    adapter = new SqlDataAdapter(command);
-                    DataTable dt = new DataTable();
-                    adapter.Fill(dt);
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        result = row["CusName"].ToString();
-                    }
-                }
-            }
-            return result;
+            this.Close();
+            _mainFr.RefreshRoleUI();
+            _mainFr.Show();
         }
 
-        private string GetCarDetails(int carId)
+        private void lbExit_Click(object sender, EventArgs e)
         {
-            string query2 = "Select * From Cars Where CarId = @CarId";
-            string result = "";
-            using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand(query2, conn))
-                {
-                    cmd.Parameters.AddWithValue("@CarId", carId);
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        string carBrand = reader["brand"].ToString();
-                        string carModel = reader["model"].ToString();
-                        string carCategory = reader["category"].ToString();
-                        int price = Convert.ToInt32(reader["price"]);
-                        result += carModel + " ";
-                        result += carBrand + " ";
-                        result += carCategory + " ";
-                        result += price + "$/ Day";
-                    }
-                }
-            }
-            return result;
+            Application.Exit();
+        }
+
+        // Feature CheckBox Event Handlers
+        private void ckbMap_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckbMap.Text, ckbMap.Checked);
+        }
+
+        private void ckBBluetooth_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBBluetooth.Text, ckBBluetooth.Checked);
+        }
+
+        private void ckBRearCamera_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBRearCamera.Text, ckBRearCamera.Checked);
+        }
+
+        private void ckBSideView_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBSideView.Text, ckBSideView.Checked);
+        }
+
+        private void ckBDashboard_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBDashboard.Text, ckBDashboard.Checked);
+        }
+
+        private void ckBSpeedAlert_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBSpeedAlert.Text, ckBSpeedAlert.Checked);
+        }
+
+        private void ckTirePressure_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckTirePressure.Text, ckTirePressure.Checked);
+        }
+
+        private void ckBCollinsion_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBCollinsion.Text, ckBCollinsion.Checked);
+        }
+
+        private void ckBSunroof_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBSunroof.Text, ckBSunroof.Checked);
+        }
+
+        private void ckBGPSNavigation_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBGPSNavigation.Text, ckBGPSNavigation.Checked);
+        }
+
+        private void ckBUSBPort_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBUSBPort.Text, ckBUSBPort.Checked);
+        }
+
+        private void ckBAllWheel_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBAllWheel.Text, ckBAllWheel.Checked);
+        }
+
+        private void ckBPickupBed_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckBPickupBed.Text, ckBPickupBed.Checked);
+        }
+
+        private void ckB360_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFeaturePrice(ckB360.Text, ckB360.Checked);
+        }
+
+        // Fuel RadioButton Event Handlers
+        private void rBAll_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFuelPrice(rBAll.Text, rBAll.Checked);
+        }
+
+        private void rBGas_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFuelPrice(rBGas.Text, rBGas.Checked);
+        }
+
+        private void rBDiesel_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFuelPrice(rBDiesel.Text, rBDiesel.Checked);
+        }
+
+        private void rBElectric_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadFuelPrice(rBElectric.Text, rBElectric.Checked);
         }
     }
 }
